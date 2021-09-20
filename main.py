@@ -14,7 +14,7 @@ import config
 client = pyrogram.Client('user', config.API_ID, config.API_HASH)
 
 
-@client.on_message(filters.regex('^debug', re.I))
+@client.on_message(filters.regex('^debug', re.I) & filters.user("me"))
 async def debug(client: Client, message: Message):
     part = message.text.split(' ')
     if message.reply_to_message:
@@ -33,7 +33,7 @@ async def debug(client: Client, message: Message):
     os.remove('debug.json')
 
 
-@client.on_message(filters.regex('^info', re.I))
+@client.on_message(filters.regex('^info', re.I) & filters.user("me"))
 async def info(client: Client, message: Message):
     info = message.reply_to_message if message.reply_to_message else message.chat
     part = message.text.split(' ')
@@ -51,7 +51,7 @@ async def info(client: Client, message: Message):
         await message.edit(text)
 
 
-@client.on_message(filters.regex('^@all', re.I) & filters.group)
+@client.on_message(filters.regex('^@all', re.I) & filters.group & filters.user("me"))
 async def all(client: Client, message: Message):
     n = 100
     part = message.text.split(' ')
@@ -70,7 +70,7 @@ async def all(client: Client, message: Message):
         await client.send_message(message.chat.id, text, entities=entity)
 
 
-@client.on_message(filters.regex('^version$', re.I))
+@client.on_message(filters.regex('^version$', re.I & filters.user("me")))
 async def version(client: Client, message: Message):
     await client.send_message(message.chat.id, "SafaSelf\n[Source](https://github.com/SafaSafari/SafaSelf)\nVersion 1.0", reply_to_message_id=message.message_id)
 
