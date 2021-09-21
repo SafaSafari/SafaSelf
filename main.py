@@ -19,7 +19,7 @@ client = Client('user', config.API_ID, config.API_HASH)
 
 old = None
 file = StringIO()
-
+stop = False
 
 @client.on_message(filters.regex('^debug', re.I) & filters.user("me"))
 async def debug(client: Client, message: Message):
@@ -79,6 +79,7 @@ async def all(client: Client, message: Message):
 
 @client.on_message(filters.regex('^upload', re.I) & filters.user("me"))
 async def upload(client: Client, message: Message):
+    global stop
     caption = "Uploaded with SafaSelf ([Source](https://github.com/SafaSafari/SafaSelf))"
     part = message.text.split(' ')
     REGEX = re.compile(
@@ -114,6 +115,9 @@ async def upload(client: Client, message: Message):
         with open(name, 'wb') as f:
             chunk_size = 4096
             for chunk in response.iter_content(chunk_size=chunk_size):
+                if stop:
+                    stop = False
+                    return
                 new = file.getvalue().strip()
                 file.truncate(0)
                 file.seek(0)
@@ -152,9 +156,9 @@ async def version(client: Client, message: Message):
 
 @client.on_message(filters.command('cancel') & filters.user("me"))
 async def cancel(client: Client, message: Message):
-    os.system("nohup python3 main.py &")
-    asyncio.sleep(2)
-    exit()
+    global stop
+    stop = True
+    await client.stop_transmission()
 
 
 async def progress(current, total, message, tq, file, tag):
