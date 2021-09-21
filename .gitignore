@@ -1,2 +1,5 @@
 config.py
 user.session
+main.py
+__pycache__/config.cpython-39.pyc
+user.session-journal
