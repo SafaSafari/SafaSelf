@@ -12,6 +12,35 @@ import config
 
 client = Client('user', config.API_ID, config.API_HASH)
 
+sys.path.insert(1, 'plugins')
+modules = []
+plugin_files = []
+for file in os.listdir('plugins'):
+    if os.path.isdir(file):
+        continue
+    split = file.split('.')
+    plugin_files.append(split[0])
+    plugin = importlib.import_module(split[0])
+    plugin.setClient(client)
+    modules.append(plugin)
+
+
+@client.on_message(filters.regex('^reload$', re.I) & filters.user("me"))
+async def reload(client: Client, message: Message):
+    global modules
+    for plugin_file in os.listdir('plugins'):
+        if os.path.isdir(plugin_file):
+            continue
+        plugin_file = plugin_file.split('.')[0]
+        if not plugin_file in plugin_files:
+            plugin_files.append(plugin_file)
+            modules.append(importlib.import_module(plugin_file))
+    for module in modules:
+        plugin = importlib.reload(module)
+        plugin.setClient(client)
+    await message.edit_text("Reloaded successfully\n{} Plugins loaded\n{}".format(len(plugin_files), '\n'.join(plugin_files)))
+
+
 @client.on_message(filters.regex('^debug', re.I) & filters.user("me"))
 async def debug(client: Client, message: Message):
     part = message.text.split(' ')
@@ -47,6 +76,7 @@ async def info(client: Client, message: Message):
         os.remove('info.json')
     else:
         await message.edit(text)
+
 
 @client.on_message(filters.regex('^version$', re.I) & filters.user("me"))
 async def version(client: Client, message: Message):
