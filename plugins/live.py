@@ -8,7 +8,13 @@ from pytgcalls import idle
 from pytgcalls import StreamType
 from pytgcalls.types.input_stream import AudioVideoPiped
 
+help = """
+live [CHAT_ID | USERNAME] {[STREAM LINK | YOUTUBE | TWITCH | MP4] | REPLY}: Start live stream from mp4 OR streaming url
 
+After start live stream:
+    leave: Leave voice chat
+    change [CHAT_ID | USERNAME] {[STREAM LINK | YOUTUBE | TWITCH | MP4] | REPLY}: Change live stream
+"""
 
 @Client.on_message(filters.regex('^live', re.I) & filters.user("me"))
 async def live(client: Client, message: Message):

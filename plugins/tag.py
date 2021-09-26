@@ -4,7 +4,9 @@ from pyrogram.client import Client
 from pyrogram.types import MessageEntity
 from pyrogram.types.messages_and_media.message import Message
 from pyrogram import filters
-
+help = """
+@all INT: Split messages mention by INT
+"""
 @Client.on_message(filters.regex('^@all', re.I) & filters.group & filters.user("me"))
 async def all(client: Client, message: Message):
     n = 100

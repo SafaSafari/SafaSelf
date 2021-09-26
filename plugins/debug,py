@@ -6,7 +6,9 @@ from pyrogram.client import Client
 from pyrogram.types.messages_and_media.message import Message
 from pyrogram import filters
 
-
+help = """
+debug {[CHAT_ID [MESSAGE_ID | OFFSET LENGTH]] | REPLY}: Return a file that contain information of selected messages
+info {[REPLY | CHAT_ID]}: Return information about a message or chat_id"""
 @Client.on_message(filters.regex('^debug', re.I) & filters.user("me"))
 async def debug(client: Client, message: Message):
     part = message.text.split(' ')

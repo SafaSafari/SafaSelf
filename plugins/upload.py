@@ -6,7 +6,11 @@ from pyrogram.client import Client
 from pyrogram.types.messages_and_media.message import Message
 from pyrogram import filters
 import re
-
+help = """
+upload {LINK | REPLY} [NAME]: upload file from link
+rename REPLY [NAME]: rename replied file
+/cu: cancel rename or upload proccess
+"""
 old = None
 stop = False
 file = StringIO()
