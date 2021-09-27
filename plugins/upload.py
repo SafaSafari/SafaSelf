@@ -15,7 +15,7 @@ old = None
 stop = False
 file = StringIO()
 
-@Client.on_message(filters.regex('^upload', re.I) & filters.user("me"))
+@Client.on_message(filters.regex(r'^upload', re.I) & filters.me)
 async def upload(client: Client, message: Message):
     global stop
     caption = "Uploaded with SafaSelf ([Source](https://github.com/SafaSafari/SafaSelf))"
@@ -39,7 +39,7 @@ async def upload(client: Client, message: Message):
         link = part[1]
     if len(part) == 3:
         name = part[2]
-    if ((message.web_page and message.web_page.document) or (message.reply_to_message and message.reply_to_message.web_page and message.reply_to_message.web_page.document)) and not name:
+    if (message.web_page or (message.reply_to_message and message.reply_to_message.web_page)) and not name:
         document = link
     elif link:
         response = requests.get(link, stream=True)
@@ -69,12 +69,12 @@ async def upload(client: Client, message: Message):
         tq.reset()
     if document:
         tag = "Upload to telegram"
-        await client.send_document(message.chat.id, document=document, file_name=name, caption=caption, progress=progress, progress_args=(message, tq, file, tag))
+        await client.send_document(message.chat.id, document=document, file_name=name, caption=caption, progress=progress, progress_args=(message, tq, file, tag, client))
         await message.delete()
     if os.path.exists(name):
         os.remove(name)
 
-@Client.on_message(filters.regex('^rename', re.I) & filters.user("me"))
+@Client.on_message(filters.regex('^rename', re.I) & filters.me)
 async def rename(client: Client, message: Message):
     part = message.text.split(' ')
     if len(part) == 2 and message.reply_to_message:
@@ -82,18 +82,18 @@ async def rename(client: Client, message: Message):
         tq = tqdm(desc=name, total=message.reply_to_message.document.file_size,
                     file=file, unit='B', unit_scale=True, mininterval=1)
         tag = "Download from telegram"
-        await message.reply_to_message.download(name, progress=progress, progress_args=(message, tq, file, tag))
+        await message.reply_to_message.download(name, progress=progress, progress_args=(message, tq, file, tag, client))
         tag = "Upload to telegram"
-        await client.send_document(message.chat.id, "downloads/" + name, progress=progress, progress_args=(message, tq, file, tag))
+        await client.send_document(message.chat.id, "downloads/" + name, progress=progress, progress_args=(message, tq, file, tag, client))
         await message.delete()
         os.remove("downloads/" + name)
 
-@Client.on_message(filters.command('cu') & filters.user("me"))
+@Client.on_message(filters.command('cu') & filters.me)
 async def cancel(client: Client, message: Message):
     global stop
     stop = True
 
-async def progress(current, total, message, tq, file, tag):
+async def progress(current, total, message, tq, file, tag, client):
     global old, stop
     tq.update(current - (old if old else 0))
     old = current

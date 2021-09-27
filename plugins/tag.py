@@ -7,7 +7,7 @@ from pyrogram import filters
 help = """
 @all INT: Split messages mention by INT
 """
-@Client.on_message(filters.regex('^@all', re.I) & filters.group & filters.user("me"))
+@Client.on_message(filters.regex(r'^@all', re.I) & filters.group & filters.me)
 async def all(client: Client, message: Message):
     n = 100
     part = message.text.split(' ')

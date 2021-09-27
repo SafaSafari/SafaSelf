@@ -9,7 +9,7 @@ from pyrogram import filters
 help = """
 debug {[CHAT_ID [MESSAGE_ID | OFFSET LENGTH]] | REPLY}: Return a file that contain information of selected messages
 info {[REPLY | CHAT_ID]}: Return information about a message or chat_id"""
-@Client.on_message(filters.regex('^debug', re.I) & filters.user("me"))
+@Client.on_message(filters.regex(r'^debug', re.I) & filters.me)
 async def debug(client: Client, message: Message):
     part = message.text.split(' ')
     if message.reply_to_message:
@@ -28,7 +28,7 @@ async def debug(client: Client, message: Message):
     os.remove('debug.json')
 
 
-@Client.on_message(filters.regex('^info', re.I) & filters.user("me"))
+@Client.on_message(filters.regex(r'^info', re.I) & filters.me)
 async def info(client: Client, message: Message):
     info = message.reply_to_message if message.reply_to_message else message.chat
     part = message.text.split(' ')

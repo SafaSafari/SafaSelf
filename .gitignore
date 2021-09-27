@@ -1,4 +1,3 @@
-config.py
 user.session
 main.py
 __pycache__/config.cpython-39.pyc
@@ -6,3 +5,4 @@ user.session-journal
 plugins/__pycache__/upload.cpython-39.pyc
 __pycache__/upload.cpython-39.pyc
 __pycache__/b.cpython-39.pyc
+config.ini
