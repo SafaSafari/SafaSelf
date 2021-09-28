@@ -1,5 +1,5 @@
 import os
-import requests
+from aiohttp import ClientSession
 from tqdm import tqdm
 from io import StringIO
 from pyrogram.client import Client
@@ -14,6 +14,7 @@ rename REPLY [NAME]: rename replied file
 old = None
 stop = False
 file = StringIO()
+
 
 @Client.on_message(filters.regex(r'^upload', re.I) & filters.me)
 async def upload(client: Client, message: Message):
@@ -42,31 +43,34 @@ async def upload(client: Client, message: Message):
     if (message.web_page or (message.reply_to_message and message.reply_to_message.web_page)) and not name:
         document = link
     elif link:
-        response = requests.get(link, stream=True)
-        header = response.headers
-        if not name:
-            name = header['content-disposition'].split(';')[1].replace('filename=', '').strip(
-                '" ') if header.get('content-disposition') else '?'.join(link.split('/')[-1].split('?')[:-1])
-        edit = ''
-        tq = tqdm(desc=name, total=int(
-            header['content-length']), file=file, unit='B', unit_scale=True, mininterval=2)
-        with open(name, 'wb') as f:
-            chunk_size = 4096
-            for chunk in response.iter_content(chunk_size=chunk_size):
-                if stop:
-                    stop = False
-                    await message.delete()
-                    return
-                new = file.getvalue().strip()
-                file.truncate(0)
-                file.seek(0)
-                if new and edit != new:
-                    edit = new
-                    await message.edit_caption("Download to server: {}\n/cu to cancel it!!!".format(edit))
-                tq.update(chunk_size)
-                f.write(chunk)
-        document = name
-        tq.reset()
+        async with ClientSession() as session:
+            async with session.get(link) as response:
+                header = response.headers
+                if not name:
+                    name = header['content-disposition'].split(';')[1].replace('filename=', '').strip(
+                        '" ') if header.get('content-disposition') else link.split('/')[-1]
+                    if name.__contains__('?'):
+                        name = ''.join(name.split('?')[:-1])
+                edit = ''
+                tq = tqdm(desc=name, total=int(
+                    header['content-length']), file=file, unit='B', unit_scale=True, mininterval=2)
+                with open(name, 'wb') as f:
+                    chunk_size = 4096
+                    async for chunk in response.content.iter_chunked(chunk_size):
+                        if stop:
+                            stop = False
+                            await message.delete()
+                            return
+                        new = file.getvalue().strip()
+                        file.truncate(0)
+                        file.seek(0)
+                        if new and edit != new:
+                            edit = new
+                            await message.edit_caption("Download to server: {}\n/cu to cancel it!!!".format(edit))
+                        tq.update(chunk_size)
+                        f.write(chunk)
+                document = name
+                tq.reset()
     if document:
         tag = "Upload to telegram"
         await client.send_document(message.chat.id, document=document, file_name=name, caption=caption, progress=progress, progress_args=(message, tq, file, tag, client))
@@ -74,13 +78,14 @@ async def upload(client: Client, message: Message):
     if os.path.exists(name):
         os.remove(name)
 
+
 @Client.on_message(filters.regex('^rename', re.I) & filters.me)
 async def rename(client: Client, message: Message):
     part = message.text.split(' ')
     if len(part) == 2 and message.reply_to_message:
         name = part[1]
         tq = tqdm(desc=name, total=message.reply_to_message.document.file_size,
-                    file=file, unit='B', unit_scale=True, mininterval=2)
+                  file=file, unit='B', unit_scale=True, mininterval=2)
         tag = "Download from telegram"
         await message.reply_to_message.download(name, progress=progress, progress_args=(message, tq, file, tag, client))
         tag = "Upload to telegram"
@@ -88,10 +93,12 @@ async def rename(client: Client, message: Message):
         await message.delete()
         os.remove("downloads/" + name)
 
+
 @Client.on_message(filters.command('cu') & filters.me)
 async def cancel(client: Client, message: Message):
     global stop
     stop = True
+
 
 async def progress(current, total, message, tq, file, tag, client):
     global old, stop

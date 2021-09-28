@@ -8,11 +8,11 @@ client = Client('user', config_file='config.ini')
 
 VERSION = 1.7
 
-@client.on_message(filters.regex('^version$', re.I) & filters.user("me"))
+@client.on_message(filters.regex('^version$', re.I) & filters.me)
 async def version(client: Client, message: Message):
     await message.edit("SafaSelf\n[Source](https://github.com/SafaSafari/SafaSelf)\nVersion {}".format(VERSION))
 
-@client.on_message(filters.regex('^help$', re.I) & filters.user("me"))
+@client.on_message(filters.regex('^help$', re.I) & filters.me)
 async def help(client: Client, message: Message):
     help = """
     version: Return current version of SafaSelf
