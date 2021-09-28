@@ -46,10 +46,10 @@ async def upload(client: Client, message: Message):
         header = response.headers
         if not name:
             name = header['content-disposition'].split(';')[1].replace('filename=', '').strip(
-                '" ') if header.get('content-disposition') else link.split('/')[-1]
+                '" ') if header.get('content-disposition') else '?'.join(link.split('/')[-1].split('?')[:-1])
         edit = ''
         tq = tqdm(desc=name, total=int(
-            header['content-length']), file=file, unit='B', unit_scale=True, mininterval=1)
+            header['content-length']), file=file, unit='B', unit_scale=True, mininterval=2)
         with open(name, 'wb') as f:
             chunk_size = 4096
             for chunk in response.iter_content(chunk_size=chunk_size):
@@ -80,7 +80,7 @@ async def rename(client: Client, message: Message):
     if len(part) == 2 and message.reply_to_message:
         name = part[1]
         tq = tqdm(desc=name, total=message.reply_to_message.document.file_size,
-                    file=file, unit='B', unit_scale=True, mininterval=1)
+                    file=file, unit='B', unit_scale=True, mininterval=2)
         tag = "Download from telegram"
         await message.reply_to_message.download(name, progress=progress, progress_args=(message, tq, file, tag, client))
         tag = "Upload to telegram"
