@@ -13,4 +13,4 @@ async def delall(client: Client, message: Message):
             chat = int(chat)
     elif message.chat.type in ['supergroup', 'group']:
         chat = message.chat.id
-    client.delete_user_history(chat, "me")
+    await client.delete_user_history(chat, "me")
