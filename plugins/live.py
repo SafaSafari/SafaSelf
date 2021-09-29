@@ -56,7 +56,7 @@ async def live(client: Client, message: Message):
                 break
         link = link.url
     if type(chat_id) == str:
-        if chat_id[1:].isnumeric():
+        if chat_id[1:].isdigit():
             chat_id = int(chat_id)
         else:
             username = "@" + chat_id if chat_id[0:1] != "@" else chat_id
@@ -95,7 +95,7 @@ async def leave(client: Client, message: Message):
     if len(part) >= 2:
         chat_id = part[1]
         if type(chat_id) == str:
-            if chat_id[1:].isnumeric():
+            if chat_id[1:].isdigit():
                 chat_id = int(chat_id)
             else:
                 username = "@" + chat_id if chat_id[0:1] != "@" else chat_id
