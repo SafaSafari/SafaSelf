@@ -13,6 +13,6 @@ async def delall(client: Client, message: Message):
         chat = message.command[1]
         if chat[1:].isdigit():
             chat = int(chat)
-    elif message.chat.type in ['supergroup', 'group']:
+    elif message.chat.type in ['supergroup']:
         chat = message.chat.id
     await client.delete_user_history(chat, "me")
