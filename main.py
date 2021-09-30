@@ -6,7 +6,7 @@ from pyrogram import filters
 
 client = Client('user', config_file='config.ini')
 
-VERSION = 1.7
+VERSION = 2.0
 
 @client.on_message(filters.regex('^version$', re.I) & filters.me)
 async def version(client: Client, message: Message):

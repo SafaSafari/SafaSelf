@@ -4,7 +4,9 @@ from pyrogram.client import Client
 from pyrogram.types.messages_and_media.message import Message
 from pyrogram import filters
 
-
+help = """
+/delall: Delete all self messages from a group
+"""
 @Client.on_message(filters.command('delall') & filters.me)
 async def delall(client: Client, message: Message):
     if len(message.command) == 2:
