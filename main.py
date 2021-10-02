@@ -4,9 +4,9 @@ from pyrogram.client import Client
 from pyrogram.types.messages_and_media.message import Message
 from pyrogram import filters
 
-client = Client('user', config_file='config.ini')
+client = Client('user', config_file='config.ini', parse_mode='md')
 
-VERSION = 2.0
+VERSION = 2.1
 
 @client.on_message(filters.regex('^version$', re.I) & filters.me)
 async def version(client: Client, message: Message):
