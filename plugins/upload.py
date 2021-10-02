@@ -70,7 +70,7 @@ async def rename(client: Client, message: Message):
         hash = hashlib.md5(name.encode('utf-8')).hexdigest()
         STOP[hash] = False
         TQ[hash] = tqdm(file=FILE, unit='b', unit_scale=True,
-                        mininterval=2, unit_divisor=1024)
+                        mininterval=2, unit_divisor=1024, ascii=False)
         TQ[hash].set_description(name)
         TQ[hash].reset(message.reply_to_message.document.file_size)
         tag = "Download from telegram"
@@ -78,9 +78,10 @@ async def rename(client: Client, message: Message):
         FILE.seek(0)
         await message.reply_to_message.download(name, progress=progress, progress_args=(message, tag, client, hash))
         tag = "Upload to telegram"
-        await client.send_document(message.chat.id, "downloads/" + name, progress=progress, progress_args=(message, tag, client, hash))
+        
+        await client.send_document(message.chat.id, "downloads" + os.sep + name, progress=progress, progress_args=(message, tag, client, hash))
         await message.delete()
-        os.remove("downloads/" + name)
+        os.remove("downloads" + os.sep + name)
 
 
 @Client.on_message(filters.command('cu') & filters.me)
@@ -104,7 +105,7 @@ async def download(link, name, message):
             hash = hashlib.md5(name.encode('utf-8')).hexdigest()
             STOP[hash] = False
             TQ[hash] = tqdm(file=FILE, unit='B', unit_scale=True,
-                            mininterval=2, unit_divisor=1024)
+                            mininterval=2, unit_divisor=1024, ascii=False)
             TQ[hash].reset(int(header['content-length']))
             TQ[hash].set_description(name)
             with open(name, 'wb') as f:

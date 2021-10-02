@@ -1,4 +1,4 @@
-import re
+import re, os
 from pathlib import Path
 from importlib import import_module, reload
 from pyrogram import Client, filters
@@ -11,8 +11,8 @@ reload: Reload all modules
 async def reload_plugins(client: Client, message: Message):
     files = []
     functions = 0
-    for path in sorted(Path("plugins/").rglob("*.py")):
-        files.append(str(path).split('/')[1][:-3])
+    for path in sorted(Path("plugins" + os.sep).rglob("*.py")):
+        files.append(str(path).split(os.sep)[1][:-3])
         module_path = '.'.join(path.parent.parts + (path.stem,))
         await reload_handlers(client, module_path, True)
         functions += (await reload_handlers(client, module_path))
