@@ -27,7 +27,7 @@ async def upload(client: Client, message: Message):
     REGEX = re.compile(
         r"(?i)\b((?:https?:(?:/{1,3}|[a-z0-9%])|[a-z0-9.\-]+[.](?:com|net|org|edu|gov|mil|aero|asia|biz|cat|coop|info|int|jobs|mobi|museum|name|post|pro|tel|travel|xxx|ac|ad|ae|af|ag|ai|al|am|an|ao|aq|ar|as|at|au|aw|ax|az|ba|bb|bd|be|bf|bg|bh|bi|bj|bm|bn|bo|br|bs|bt|bv|bw|by|bz|ca|cc|cd|cf|cg|ch|ci|ck|cl|cm|cn|co|cr|cs|cu|cv|cx|cy|cz|dd|de|dj|dk|dm|do|dz|ec|ee|eg|eh|er|es|et|eu|fi|fj|fk|fm|fo|fr|ga|gb|gd|ge|gf|gg|gh|gi|gl|gm|gn|gp|gq|gr|gs|gt|gu|gw|gy|hk|hm|hn|hr|ht|hu|id|ie|il|im|in|io|iq|ir|is|it|je|jm|jo|jp|ke|kg|kh|ki|km|kn|kp|kr|kw|ky|kz|la|lb|lc|li|lk|lr|ls|lt|lu|lv|ly|ma|mc|md|me|mg|mh|mk|ml|mm|mn|mo|mp|mq|mr|ms|mt|mu|mv|mw|mx|my|mz|na|nc|ne|nf|ng|ni|nl|no|np|nr|nu|nz|om|pa|pe|pf|pg|ph|pk|pl|pm|pn|pr|ps|pt|pw|py|qa|re|ro|rs|ru|rw|sa|sb|sc|sd|se|sg|sh|si|sj|Ja|sk|sl|sm|sn|so|sr|ss|st|su|sv|sx|sy|sz|tc|td|tf|tg|th|tj|tk|tl|tm|tn|to|tp|tr|tt|tv|tw|tz|ua|ug|uk|us|uy|uz|va|vc|ve|vg|vi|vn|vu|wf|ws|ye|yt|yu|za|zm|zw)/)(?:[^\s()<>{}\[\]]+|\([^\s()]*?\([^\s()]+\)[^\s()]*?\)|\([^\s]+?\))+(?:\([^\s()]*?\([^\s()]+\)[^\s()]*?\)|\([^\s]+?\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’])|(?:(?<!@)[a-z0-9]+(?:[.\-][a-z0-9]+)*[.](?:com|net|org|edu|gov|mil|aero|asia|biz|cat|coop|info|int|jobs|mobi|museum|name|post|pro|tel|travel|xxx|ac|ad|ae|af|ag|ai|al|am|an|ao|aq|ar|as|at|au|aw|ax|az|ba|bb|bd|be|bf|bg|bh|bi|bj|bm|bn|bo|br|bs|bt|bv|bw|by|bz|ca|cc|cd|cf|cg|ch|ci|ck|cl|cm|cn|co|cr|cs|cu|cv|cx|cy|cz|dd|de|dj|dk|dm|do|dz|ec|ee|eg|eh|er|es|et|eu|fi|fj|fk|fm|fo|fr|ga|gb|gd|ge|gf|gg|gh|gi|gl|gm|gn|gp|gq|gr|gs|gt|gu|gw|gy|hk|hm|hn|hr|ht|hu|id|ie|il|im|in|io|iq|ir|is|it|je|jm|jo|jp|ke|kg|kh|ki|km|kn|kp|kr|kw|ky|kz|la|lb|lc|li|lk|lr|ls|lt|lu|lv|ly|ma|mc|md|me|mg|mh|mk|ml|mm|mn|mo|mp|mq|mr|ms|mt|mu|mv|mw|mx|my|mz|na|nc|ne|nf|ng|ni|nl|no|np|nr|nu|nz|om|pa|pe|pf|pg|ph|pk|pl|pm|pn|pr|ps|pt|pw|py|qa|re|ro|rs|ru|rw|sa|sb|sc|sd|se|sg|sh|si|sj|Ja|sk|sl|sm|sn|so|sr|ss|st|su|sv|sx|sy|sz|tc|td|tf|tg|th|tj|tk|tl|tm|tn|to|tp|tr|tt|tv|tw|tz|ua|ug|uk|us|uy|uz|va|vc|ve|vg|vi|vn|vu|wf|ws|ye|yt|yu|za|zm|zw)\b/?(?!@)))", re.I)
     YOUTUBE_REGEX = re.compile(
-        r"http(?:s?):\/\/(?:www\.)?youtu(?:be\.com\/watch\?v=|\.be\/)([\w\-\_]*)", re.I)
+        r"http(?:s?):\/\/(?:www\.)?(?:m\.)?youtu(?:be\.com\/watch\?v=|\.be\/)([\w\-\_]*)", re.I)
 
     name = None
     document = None
@@ -112,8 +112,6 @@ async def download(link, name, message):
                 chunk_size = 4096
                 async for chunk in response.content.iter_chunked(chunk_size):
                     if STOP[hash]:
-                        STOP[hash] = False
-                        await message.edit_text("لغو شد\nCanceled")
                         return
                     new = FILE.getvalue()
                     if new.__contains__('\r'):
@@ -141,6 +139,10 @@ async def progress(current, total, message, tag, client, hash):
     if STOP[hash]:
         STOP[hash] = False
         await message.edit_text("لغو شد\nCanceled")
+        files = os.scandir('.')
+        for file in files:
+            if str(file).__contains__(TQ[hash].get_description()):
+                os.remove(file)
         await client.stop_transmission()
     if progress:
         text = "{}:\n`{}`\n`/cu {}`\nto cancel (Click to copy)".format(
@@ -215,11 +217,16 @@ async def download_youtube(id, client, message, caption):
     if str(caption).__len__() - 44 > 1024:
         caption = "\n".join(
             caption[:(1024 - 43 - 3)].split("\n")[:-1]) + "\n..."
-    await client.send_video(message.chat.id, video, caption=caption, thumb=id + '.jpg', duration=result[6], supports_streaming=True, width=result[4], height=result[5], progress=progress, progress_args=(message, "Uploading to telegram", client, hash))
+    if not STOP[hash]:
+        await client.send_video(message.chat.id, video, caption=caption, thumb=id + '.jpg', duration=result[6], supports_streaming=True, width=result[4], height=result[5], progress=progress, progress_args=(message, "Uploading to telegram", client, hash))
     audio = id + ".mp3"
-    if not os.path.exists(audio):
+    if not os.path.exists(audio) and not STOP[hash]:
         await run('ffmpeg -i "{}" -vn -- "{}"'.format(video, audio))
-    await client.send_audio(message.chat.id, audio, caption=caption, thumb=id + '.jpg', duration=result[6], title="@SafaSelf", performer="@SafaSelf", progress=progress, progress_args=(message, "Uploading to telegram", client, hash))
+    if STOP[hash]:
+        STOP[hash] = False
+        await message.edit_text("لغو شد\nCanceled")
+    else:
+        await client.send_audio(message.chat.id, audio, caption=caption, thumb=id + '.jpg', duration=result[6], title="@SafaSelf", performer="@SafaSelf", progress=progress, progress_args=(message, "Uploading to telegram", client, hash))
 
     files = os.scandir('.')
     for file in files:
