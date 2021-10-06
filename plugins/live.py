@@ -39,7 +39,7 @@ async def live(client: Client, message: Message):
         if not media:
             return
         tq = tqdm(desc="Download to Stream", total=media.file_size,
-                  file=file, unit='B', unit_scale=True, mininterval=2)
+                  file=file, unit='B', unit_scale=True, mininterval=2, ascii=False)
         tag = "Download media to stream"
         link = await message.reply_to_message.download(progress=progress, progress_args=(message, tq, file, tag, client))
     for parameter in part:
