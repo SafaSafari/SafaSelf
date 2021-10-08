@@ -15,9 +15,8 @@ upload {LINK | REPLY} [NAME]: upload file from link
 rename REPLY [NAME]: rename replied file
 /cu: cancel rename or upload proccess
 """
+
 STOP = {}
-FILE = StringIO()
-TQ = {}
 
 
 @Client.on_message(filters.regex(r'^upload', re.I) & filters.me)
@@ -56,7 +55,8 @@ async def upload(client: Client, message: Message):
     if document:
         tag = "Upload to telegram"
         hash = hashlib.md5(document.encode('utf-8')).hexdigest()
-        await client.send_document(message.chat.id, document=document, file_name=document, caption=caption, progress=progress, progress_args=(message, tag, client, hash))
+        file = StringIO()
+        await client.send_document(message.chat.id, document=document, file_name=document, caption=caption, progress=progress, progress_args=(message, tag, client, hash, file))
         await message.delete()
     if type(document) == str and os.path.exists(document):
         os.remove(document)
@@ -69,17 +69,14 @@ async def rename(client: Client, message: Message):
         name = part[1]
         hash = hashlib.md5(name.encode('utf-8')).hexdigest()
         STOP[hash] = False
-        TQ[hash] = tqdm(file=FILE, unit='b', unit_scale=True,
-                        mininterval=2, unit_divisor=1024, ascii=False)
-        TQ[hash].set_description(name)
-        TQ[hash].reset(message.reply_to_message.document.file_size)
+        file = StringIO()
+        tq = tqdm(desc=name, total=message.reply_to_message.document.file_size, file=file, unit='b', unit_scale=True, mininterval=2, unit_divisor=1024, ascii=False)
         tag = "Download from telegram"
-        FILE.truncate(0)
-        FILE.seek(0)
-        await message.reply_to_message.download(name, progress=progress, progress_args=(message, tag, client, hash))
+        file.truncate(0)
+        file.seek(0)
+        await message.reply_to_message.download(name, progress=progress, progress_args=(message, tag, client, hash, file, tq))
         tag = "Upload to telegram"
-        
-        await client.send_document(message.chat.id, "downloads" + os.sep + name, progress=progress, progress_args=(message, tag, client, hash))
+        await client.send_document(message.chat.id, "downloads" + os.sep + name, progress=progress, progress_args=(message, tag, client, hash, file, tq))
         await message.delete()
         os.remove("downloads" + os.sep + name)
 
@@ -91,8 +88,6 @@ async def cancel(client: Client, message: Message):
 
 
 async def download(link, name, message):
-    FILE.truncate(0)
-    FILE.seek(0)
     async with ClientSession() as session:
         async with session.get(link) as response:
             header = response.headers
@@ -104,44 +99,42 @@ async def download(link, name, message):
             edit = ''
             hash = hashlib.md5(name.encode('utf-8')).hexdigest()
             STOP[hash] = False
-            TQ[hash] = tqdm(file=FILE, unit='B', unit_scale=True,
-                            mininterval=2, unit_divisor=1024, ascii=False)
-            TQ[hash].reset(int(header['content-length']))
-            TQ[hash].set_description(name)
+            file = StringIO()
+            tq = tqdm(desc=name, total=int(header['content-length']), file=file, unit='B', unit_scale=True, mininterval=2, unit_divisor=1024, ascii=False)
             with open(name, 'wb') as f:
                 chunk_size = 4096
                 async for chunk in response.content.iter_chunked(chunk_size):
                     if STOP[hash]:
                         return
-                    new = FILE.getvalue()
+                    new = file.getvalue()
                     if new.__contains__('\r'):
                         new = new.split('\r')[1]
-                    FILE.truncate(0)
-                    FILE.seek(0)
+                    file.truncate(0)
+                    file.seek(0)
                     if new and edit != new:
                         edit = new
                         text = "Download to server:\n`{}`\n`/cu {}`\nto cancel (Click to copy)".format(
                             edit, hash)
                         await message.edit_text(text)
-                    TQ[hash].update(chunk_size)
+                    tq.update(chunk_size)
                     f.write(chunk)
-    TQ[hash].reset()
-    return name
+    tq.reset()
+    return name, tq
 
 
-async def progress(current, total, message, tag, client, hash):
-    TQ[hash].update(current - TQ[hash].n)
-    progress = FILE.getvalue()
+async def progress(current, total, message, tag, client, hash, file, tq):
+    tq.update(current - tq.n)
+    progress = file.getvalue()
     if progress.__contains__('\r'):
         progress = progress.split('\r')[1]
-    FILE.truncate(0)
-    FILE.seek(0)
+    file.truncate(0)
+    file.seek(0)
     if STOP[hash]:
         STOP[hash] = False
         await message.edit_text("لغو شد\nCanceled")
         files = os.scandir('.')
         for file in files:
-            if str(file).__contains__(TQ[hash].get_description()):
+            if str(file).__contains__(tq.get_description()):
                 os.remove(file)
         await client.stop_transmission()
     if progress:
@@ -195,7 +188,7 @@ async def download_youtube(id, client, message, caption):
         return await download_youtube(id, client, message, caption)
     video = id + ".mp4"
     hash = hashlib.md5(video.encode('utf-8')).hexdigest()
-    await download(result[3], video, message)
+    video, tq = await download(result[3], video, message)
     if not os.path.exists(video):
         await asyncio.sleep(60)
         return await download_youtube(id, client, message, caption)
@@ -218,7 +211,8 @@ async def download_youtube(id, client, message, caption):
         caption = "\n".join(
             caption[:(1024 - 43 - 3)].split("\n")[:-1]) + "\n..."
     if not STOP[hash]:
-        await client.send_video(message.chat.id, video, caption=caption, thumb=id + '.jpg', duration=result[6], supports_streaming=True, width=result[4], height=result[5], progress=progress, progress_args=(message, "Uploading to telegram", client, hash))
+        file = StringIO()
+        await client.send_video(message.chat.id, video, caption=caption, thumb=id + '.jpg', duration=result[6], supports_streaming=True, width=result[4], height=result[5], progress=progress, progress_args=(message, "Uploading to telegram", client, hash, file, tq))
     audio = id + ".mp3"
     if not os.path.exists(audio) and not STOP[hash]:
         await run('ffmpeg -i "{}" -vn -- "{}"'.format(video, audio))
@@ -226,7 +220,8 @@ async def download_youtube(id, client, message, caption):
         STOP[hash] = False
         await message.edit_text("لغو شد\nCanceled")
     else:
-        await client.send_audio(message.chat.id, audio, caption=caption, thumb=id + '.jpg', duration=result[6], title="@SafaSelf", performer="@SafaSelf", progress=progress, progress_args=(message, "Uploading to telegram", client, hash))
+        tq.set_description(audio)
+        await client.send_audio(message.chat.id, audio, caption=caption, thumb=id + '.jpg', duration=result[6], title="@SafaSelf", performer="@SafaSelf", progress=progress, progress_args=(message, "Uploading to telegram", client, hash, file, tq))
 
     files = os.scandir('.')
     for file in files:
