@@ -91,13 +91,14 @@ async def download(link, name, message):
     async with ClientSession() as session:
         async with session.get(link) as response:
             header = response.headers
-            if header.get('content-disposition'):
-                spl = header['content-disposition'].split(';')
-                name = (spl[-1].replace('filename=', '').strip('" ') if spl[-1].lower().__contains__('filename') else link.split('/')[-1])
-            else:
-                name = link.split('/')[-1]
-                if name.__contains__('?'):
-                    name = ''.join(name.split('?')[:-1])
+            if not name:
+                if header.get('content-disposition'):
+                    spl = header['content-disposition'].split(';')
+                    name = (spl[-1].replace('filename=', '').strip('" ') if spl[-1].lower().__contains__('filename') else link.split('/')[-1])
+                else:
+                    name = link.split('/')[-1]
+                    if name.__contains__('?'):
+                        name = ''.join(name.split('?')[:-1])
             edit = ''
             hash = hashlib.md5(name.encode('utf-8')).hexdigest()
             STOP[hash] = False
