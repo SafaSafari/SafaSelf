@@ -1,5 +1,5 @@
 [pyrogram]
-api_id = 123456 # can obtain from my.telegram.org
-api_hash = abcdefghijklmnopqrstuvwxyz012345 # can obtain from my.telegram.org
+api_id = 123456 ; can obtain from my.telegram.org
+api_hash = abcdefghijklmnopqrstuvwxyz012345 ; can obtain from my.telegram.org
 [plugins]
 root = plugins
