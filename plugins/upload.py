@@ -51,12 +51,12 @@ async def upload(client: Client, message: Message):
     elif (message.web_page or (message.reply_to_message and message.reply_to_message.web_page)) and not name:
         document = link
     elif link:
-        document = await download(link, name, message)
+        document, tq = await download(link, name, message)
     if document:
         tag = "Upload to telegram"
         hash = hashlib.md5(document.encode('utf-8')).hexdigest()
         file = StringIO()
-        await client.send_document(message.chat.id, document=document, file_name=document, caption=caption, progress=progress, progress_args=(message, tag, client, hash, file))
+        await client.send_document(message.chat.id, document=document, file_name=document, caption=caption, progress=progress, progress_args=(message, tag, client, hash, file, tq))
         await message.delete()
     if type(document) == str and os.path.exists(document):
         os.remove(document)
@@ -89,7 +89,7 @@ async def cancel(client: Client, message: Message):
 
 async def download(link, name, message):
     async with ClientSession() as session:
-        async with session.get(link) as response:
+        async with session.get(link, headers={'Connection': 'keep-alive'}) as response:
             header = response.headers
             if not name:
                 if header.get('content-disposition'):

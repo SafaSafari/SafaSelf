@@ -33,15 +33,15 @@ async def live(client: Client, message: Message):
         chat_id = message.chat.id
     if message.reply_to_message:
         link = message.reply_to_message.text
-    if message.reply_to_message.media:
-        media = message.reply_to_message.document if hasattr(message.reply_to_message.document, "file_size") else message.reply_to_message.video if hasattr(
-            message.reply_to_message.video, "file_size") else message.reply_to_message.audio if hasattr(message.reply_to_message.audio, "file_size") else message.reply_to_message.voice if hasattr(message.reply_to_message.voice, "file_size") else None
-        if not media:
-            return
-        tq = tqdm(desc="Download to Stream", total=media.file_size,
-                  file=file, unit='B', unit_scale=True, mininterval=2, ascii=False)
-        tag = "Download media to stream"
-        link = await message.reply_to_message.download(progress=progress, progress_args=(message, tq, file, tag, client))
+        if message.reply_to_message.media:
+            media = message.reply_to_message.document if hasattr(message.reply_to_message.document, "file_size") else message.reply_to_message.video if hasattr(
+                message.reply_to_message.video, "file_size") else message.reply_to_message.audio if hasattr(message.reply_to_message.audio, "file_size") else message.reply_to_message.voice if hasattr(message.reply_to_message.voice, "file_size") else None
+            if not media:
+                return
+            tq = tqdm(desc="Download to Stream", total=media.file_size,
+                    file=file, unit='B', unit_scale=True, mininterval=2, ascii=False)
+            tag = "Download media to stream"
+            link = await message.reply_to_message.download(progress=progress, progress_args=(message, tq, file, tag, client))
     for parameter in part:
         if parameter.__len__() == 2:
             mode = parameter
