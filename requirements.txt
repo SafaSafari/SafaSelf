@@ -2,5 +2,5 @@ aiohttp
 tqdm
 pyrogram
 youtube-dl
-py-tgcalls==0.8.1b22
+py-tgcalls==0.8.2
 streamlink
